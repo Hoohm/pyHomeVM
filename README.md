@@ -13,6 +13,7 @@ The tool can detect new videos, updates and modification in folder content to ad
 **Status**
 
 DONE:
+
 1) Reading, saving and updating changes in folder structure.
 The structure is presented like this:
 The root folder is Video, Level 1 are years, level 2 are names for the Video.
