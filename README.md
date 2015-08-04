@@ -15,22 +15,7 @@ The tool can detect new videos, updates and modification in folder content to ad
 DONE:
 1) Reading, saving and updating changes in folder structure.
 The structure is presented like this:
-Level 1 are years, level 2 are names for the Video.
-
-Video_root
-    |
-    |--2014
-    |   |--Paris
-    |   |   |--Vid1.mp4
-    |   |   |--Vid2.mp4
-    |   |--John' Birthday
-    |           |--Vid1.mpeg
-    |           |--Vid2.mpeg
-    |
-    |--2015
-        |--Leeroy!
-              |--Vid1.mpg
-              |--Vid2.mpg
+The root folder is Video, Level 1 are years, level 2 are names for the Video.
 
 
 2) Base encoding
