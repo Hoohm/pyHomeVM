@@ -16,6 +16,8 @@ script_root_dir = os.getcwd()
 nas_composer_name = ''
 ffmpeg_preset = ''
 ffmpeg_crf = ''
+ffmpeg_crf_base = ''
+
 #MailNotifications configs
 
 mail_fromaddr = ''
