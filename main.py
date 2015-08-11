@@ -1,5 +1,5 @@
 '''
-Video-sync. A tool that allows you to manage your holidays library and create 
+Video-sync. A tool that allows you to manage your holidays library and create
 long version of your holidays to enjoy on your media center
 '''
 
@@ -20,12 +20,12 @@ from notifications import *
 def loadConfigFile():
     with open('config.py', 'r') as f:
         for line in f:
-            if(re.match('video_root_dir', line)):
-                global video_root_dir
-                video_root_dir = line.split('=')[1].strip(' \'\n')
-            elif(re.match('popcorn_root_dir', line)):
-                global popcorn_root_dir
-                popcorn_root_dir = line.split('=')[1].strip(' \'\n')
+            if(re.match('local_root_dir', line)):
+                global local_root_dir
+                local_root_dir = line.split('=')[1].strip(' \'\n')
+            elif(re.match('remote_root_dir', line)):
+                global remote_root_dir
+                remote_root_dir = line.split('=')[1].strip(' \'\n')
             elif(re.match('ffmpegExecutablePath', line)):
                 global ffmpegExecutablePath
                 ffmpegExecutablePath = line.split('=')[1].strip(' \'\n')
@@ -46,16 +46,16 @@ def loadConfigFile():
                 logFolder = line.split('=')[1].strip(' \'\n')
 
 
-#Function that takes a folder and returns a unique ID to
-#identify a specific content of folder.
-#Input: path to folder as string
-#Output: ID as string
 def createFolderID(folder_path):
+    '''
+    Function that takes a folder and returns a unique ID to
+    identify a specific content of folder.
+    Input: folder_path as string
+    Output: ID as string'''
     folder_profile = ''
     folder_list = {}
     for filename in listVideoFiles(folder_path):  # loop files
         cur_path = os.path.join(folder_path, filename)
-        #video_details[filename] = getVideoDetails(cur_path)
         folder_list[filename] = md5ForFile(cur_path)
     for filename in sorted(folder_list.keys()):
         folder_profile += folder_list[filename]
@@ -64,6 +64,10 @@ def createFolderID(folder_path):
 
 
 def listVideoFiles(folder_path):
+    '''Function that lists the video files found in a folder
+    Input: folder_path as string
+    Output: list of videos
+    '''
     return [i
         for i in os.listdir(folder_path)
         if os.path.isfile(os.path.join(folder_path, i))
@@ -72,6 +76,11 @@ def listVideoFiles(folder_path):
 
 
 def getFolderVideoDetails(folder_path):
+    '''Function that returns a dict created by getVideoDetails
+    for each file in a folder.
+    Input: folder_path as string
+    Output: Dict with video details for each video
+    '''
     video_details = {}
     for filename in listVideoFiles(folder_path):  # loop files
         cur_path = os.path.join(folder_path, filename)
@@ -79,19 +88,22 @@ def getFolderVideoDetails(folder_path):
     return(video_details)
 
 
-#Function that writes a dir structure to dir_tree.txt file
-#Input: structure
-#Output: NA
-def writeStructure(structure, file=script_root_dir + '/dir_tree.txt'):
-    with open(file, 'w') as outfile:
+def writeStructure(structure, file_path=script_root_dir + '/dir_tree.txt'):
+    '''Function that writes a dir structure to dir_tree.txt file
+    Input: structure as dict, file_path as string
+    Output: None
+    '''
+    with open(file_path, 'w') as outfile:
         json.dump(structure, outfile)
 
 
-#Function that reads a dir file from a json file
-#Input: dir_tree.txt file
-#Output: structure dict
-def readStructureFromFile(infile=script_root_dir + '/dir_tree.txt'):
-    with codecs.open(infile, 'r', 'utf-8') as f:
+def readStructureFromFile(file_path=script_root_dir + '/dir_tree.txt'):
+    '''
+    Function that reads a structure file from a json file
+    Input: file_path as string dir_tree.txt
+    Output: structure as dict
+    '''
+    with codecs.open(file_path, 'r', 'utf-8') as f:
         try:
             structure = json.load(f)
         except:
@@ -100,30 +112,31 @@ def readStructureFromFile(infile=script_root_dir + '/dir_tree.txt'):
 
 
 def createStructureEntry(ID, structure, folder_path, video_details):
-    '''Function that creates an entry in the structure object
-    - Input: ID, structure, folder_path, video_details
-    - Output: NA, changes strucure in place'''
+    '''
+    Function that creates an entry in the structure object
+    Input: ID, structure, folder_path, video_details
+    Output: NA, changes strucure in place'''
     structure[ID] = {}  # Empty dict containing folder info
     structure[ID]['path'] = folder_path  # Fill path
     structure[ID]['video_details'] = video_details
 
 
-#Function that reads the structure of the dirs of the videos
-#Input: Base dirs as lit
-#Output: Dict of dir structure of videos
-def readStructure(video_root_dir):
-    base_level = os.listdir(video_root_dir)
+def readStructure(local_root_dir):
+    '''
+    Function that reads the structure of the dirs of the videos
+    Input: Base dirs as lit
+    Output: Dict of dir structure of videos
+
+    '''
+    base_level = os.listdir(local_root_dir)
     structure = {}  # Create empty structure
     #structure_with_date = {}
     for level1 in base_level:  # loop years. Level1 are years
         #Only take folders that are assimilated to years, ex: 1999
-        if (re.match(r'^[0-9]{4}$', level1) and os.path.isdir(os.path.join(video_root_dir, level1))):  # condition level1
-            for level2 in os.listdir(os.path.join(video_root_dir, level1).decode('utf-8')):
-                '''loop level2. Level2 are folder with videos in them.
-                The name of the folder is the name of the future concatenated video
-                '''
-                if os.path.isdir(os.path.join(video_root_dir, level1, level2)):  # If is dir
-                    current_path = u'/'.join([video_root_dir, level1, level2])  # Use folder as reference
+        if (re.match(r'^[0-9]{4}$', level1) and os.path.isdir(os.path.join(local_root_dir, level1))):  # condition level1
+            for level2 in os.listdir(os.path.join(local_root_dir, level1).decode('utf-8')):
+                if os.path.isdir(os.path.join(local_root_dir, level1, level2)):  # If is dir
+                    current_path = u'/'.join([local_root_dir, level1, level2])  # Use folder as reference
                     ID = createFolderID(current_path)  # ID of the folder
                     if(ID == ''):
                         continue
@@ -132,13 +145,14 @@ def readStructure(video_root_dir):
     return (structure)
 
 
-# When we have multiple videos in one folder and some have not the same
-# codec or resolution, we have to either convert everything to fit
-# or make multiple videos.
-#Input: folder_info as dict and type of handling as 'multiple' or 'convert' (futur)
-# default is multiple
-#Output: NA, creates chapters files in folders
 def checkDetailsCompatibility(folder_info):
+    '''
+    Function that checks that every video in one folder have the same
+    resolution or framerate.
+    If not, converts to the lowest standard of the different possibilities.
+    Input: folder_info as dict of video details
+    Output: changes as Bool
+    '''
     changes = False
     resolutions = {}
     frame_rates = {}
@@ -171,6 +185,11 @@ def checkDetailsCompatibility(folder_info):
 
 
 def baseFolderConvertion(folder_path):
+    '''
+    Function that converts new videos to the base encoding chosen
+    Input: folder_path as string
+    Ouptut: changes as Bool
+    '''
     video_details = getFolderVideoDetails(folder_path)
     changes = False
     logger.info('Working on folder: {}'.format(folder_path.encode('utf-8')))
@@ -185,7 +204,7 @@ def baseFolderConvertion(folder_path):
         else:
             logger.info(video + ' Not from nas')
             executeCommand("mv '{}' '{}'".format(video, 'temp/' + video))
-            if(video_details[video][3] is not None):  # Then we have a creation time
+            if(video_details[video][3] is not None):  # Found creation time
                 creation_time = video_details[video][3]
             else:
                 creation_time = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -218,6 +237,10 @@ def mvRoot():
 
 
 def convertVideoDetails(file_path, creation_time, details):
+    '''
+    Function that converts a video with new options
+    Input: file_path as string, creation_time as string, details as dict
+    '''
     command = (
         "{} -loglevel panic -y -i '{}' "
         "-rc_eq 'blurCplx^(1-qComp)' "
@@ -240,43 +263,59 @@ def convertVideoDetails(file_path, creation_time, details):
 
 
 def executeCommand(command):
+    '''
+    Function that executes a command to shell.
+    Allows to waitbetween each command
+    Input: command as string
+    Ouptut: None
+    '''
     logger.debug('Executing: {}'.format(command))
     proc = subprocess.Popen(command, shell=True)
     proc.wait()
 
 
-
 def isFromNas(stdout):
+    '''
+    Function that checks if a video has been created on the NAS.
+    Input: stdout as string
+    Ouptut: True or False
+    '''
     try:
         return(stdout['format']['tags']['composer'] == nas_composer_name)
     except:
         return(False)
-    return('FAIL')
 
 
 def hasCreationTime(stdout):
+    '''
+    Function that checks if a video has a creation time/date.
+    Input: stdout as string
+    Ouptut: True or False
+    '''
     try:
         return(stdout['format']['tags']['creation_time'])
     except:
         return(False)
-    return('FAIL')
 
 
-#Function that takes a file and returns duration plus offset duration
-#Input: filepath
-#Output:
-def getVideoDetails(filepath):
-    filepath = filepath.encode('utf-8')
-    command = """{} -v error -show_format -show_streams -print_format json
-    -sexagesimal '{}'""".format(ffprobeExecutablePath, filepath).replace('\n', '')
-    
+def getVideoDetails(file_path):
+    '''
+    Function that takes a file and returns duration plus offset duration
+    Input: file_path as string
+    Output: video_details as dict
+    '''
+    file_path = file_path.encode('utf-8')
+    command = (
+        "{} -v error -show_format"
+        "-show_streams -print_format json"
+        "-sexagesimal '{}'"
+        ).format(ffprobeExecutablePath, file_path).replace('\n', '')
     proc = subprocess.Popen(
         command,
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
         )
-
     stdout, err = proc.communicate()
     stdout = json.loads(stdout)
     for stream_num, stream in enumerate(stdout['streams']):
@@ -309,10 +348,12 @@ def getVideoDetails(filepath):
 
 
 def datetimeToStr(time_to_convert):
-    '''Function that converts deltatime into string making sure
+    '''
+    Function that converts deltatime into string making sure
     that the formatting is right for mkvmerge
-    -Input: timedelta object
-    -Output: time as string'''
+    Input: time_to_convert as timedelta object
+    Output: time as string
+    '''
     result = str(time_to_convert)
     if(re.match('[0-9]{1,2}:[0-9]{2}:[0-9]{2}.[0-9]', result)):
         return(result)
@@ -321,9 +362,11 @@ def datetimeToStr(time_to_convert):
 
 
 def addTime(t1, t2):
-    '''Function that adds times
-    - Input: time 1 and time 2 as strings
-    - Ouptut: added time as deltatime object'''
+    '''
+    Function that adds times
+    Input: t1 and t2 as strings
+    Ouptut: added time as deltatime object
+    '''
     t1 = datetime.strptime(t1, '%H:%M:%S.%f')
     t2 = datetime.strptime(t2, '%H:%M:%S.%f')
     deltat1 = timedelta(
@@ -341,12 +384,14 @@ def addTime(t1, t2):
     return(deltat1 + deltat2)
 
 
-def md5ForFile(filepath, block_size=128):
-    '''Function that takes a file and gives back a hash of
+def md5ForFile(file_path, block_size=128):
+    '''
+    Function that takes a file and returns the first 10 characters of a hash of
     the first 10 block of bytes
-    -Input: File
-    -Output: Hash of 10 blocks of 128 bits of size as string'''
-    with open(filepath, 'r') as f:
+    Input: File
+    Output: Hash of 10 blocks of 128 bits of size as string
+    '''
+    with open(file_path, 'r') as f:
         n = 1
         md5 = hashlib.md5()
         while True:
@@ -358,24 +403,13 @@ def md5ForFile(filepath, block_size=128):
     return (md5.hexdigest()[0:9])
 
 
-def color(string, color):
-    '''Function to change color of stdouptut for readability in shell
-    -Input: string to color and the wished format
-    -Output: colored string'''
-    if color == 'red':
-        return "\033[31m" + string + "\033[0m"
-    elif color == 'green':
-        return "\033[32m" + string + "\033[0m"
-    elif color == 'bold':
-        return "\033[1m" + string + "\033[0m"
-    elif color == 'yellow':
-        return "\033[33m" + string + "\033[0m"
-
-
 def updateStructure(past_structure, new_structure):
-    '''Function that compares two dir structures and give our the differences
-    -Input: two structure, present and past
-    -Output:NA changes strucure in place'''
+    '''
+    Function that compares two structures looking
+    for new,modified,deleted folders/files
+    Input: past_structure as dict, new_structure as dict
+    Output: None, changes strucure in place
+    '''
     new_paths = getPathList(new_structure)
     present_structure = copy.deepcopy(past_structure)
     for ID in past_structure.keys():
@@ -410,6 +444,11 @@ def updateStructure(past_structure, new_structure):
 
 
 def processFolder(structure, ID):
+    '''
+    Function that processes a folder. Checks if videos are new
+    or not compatible and encodes them accordingly.
+    Input: structure as dict, ID as string
+    '''
     details_changes = False
     folder_path = structure[ID]['path']
     if(baseFolderConvertion(folder_path)):
@@ -432,9 +471,11 @@ def processFolder(structure, ID):
 
 
 def getPathList(structure):
-    '''Function that gets le lists of existing paths in a structure
-    -Input: Structure_info
-    -Output: list of paths(string)'''
+    '''
+    Function that gets le list of existing paths in a structure
+    Input: Structure as dict
+    Output: paths as list of strings
+    '''
     paths = []
     for ID in structure.keys():
         paths.append(structure[ID]['path'])
@@ -442,36 +483,50 @@ def getPathList(structure):
 
 
 def syncDirTree():
+    '''
+    Function that copies the folder structure to the remote media player.
+    Suppresses the folder that are empty and missing from the NAS
+    Input: None
+    Output: None
+    '''
     logger.info('Syncing remote folders structure')
     executeCommand(
         (
             "rsync --delete -av -f\"- /*/*/*/\" -f\"- */*/*\" "
-            "{} {}").format(video_root_dir + '/', popcorn_root_dir + '/')
+            "{} {}").format(local_root_dir + '/', remote_root_dir + '/')
         )
 
 
 def transferLongVersions():
-    base_level = os.listdir(video_root_dir)
+    '''
+    Function that looks for mkv movies and sends them to the remote media player
+    Input: None
+    Output: None
+    '''
+    base_level = os.listdir(local_root_dir)
     long_videos = []
     for level1 in base_level:  # loop years. Level1 are years
         #Only take folders that are assimilated to years, ex: 1999
-        if (re.match(r'^[0-9]{4}$', level1) and os.path.isdir(os.path.join(video_root_dir, level1))):  # condition level1
-            for level2 in os.listdir(os.path.join(video_root_dir, level1).decode('utf-8')):
-                folder_path = os.path.join(video_root_dir, level1, level2)
+        if (re.match(r'^[0-9]{4}$', level1) and os.path.isdir(os.path.join(local_root_dir, level1))):  # condition level1
+            for level2 in os.listdir(os.path.join(local_root_dir, level1).decode('utf-8')):
+                folder_path = os.path.join(local_root_dir, level1, level2)
                 long_videos.append([os.path.join(folder_path, i)
                     for i in os.listdir(folder_path)
                     if os.path.isfile(os.path.join(folder_path, i))
                     and os.path.splitext(i)[1] == '.mkv'])
     long_videos = [item for sublist in long_videos for item in sublist]  # Flatten the nested list
     for video in long_videos:
-        executeCommand("mv '{}' '{}'".format(video.encode('utf-8'), '/'.join(video.replace(video_root_dir, popcorn_root_dir).split('/')[:-1]).encode('utf-8')+'/'))
+        executeCommand("mv '{}' '{}'".format(video.encode('utf-8'), '/'.join(video.replace(local_root_dir, remote_root_dir).split('/')[:-1]).encode('utf-8')+'/'))
     logger.info("Long versions have been sent")
 
 
 def createLongVideo(folder_info):
-    '''Function that runs mkvmerge to create a long version of list of videos. Needs a chapter file (see createChaptersList)
-    -Input: structure_info
-    -Ouptut: NA'''
+    '''
+    Function that runs mkvmerge to create a long version of list of videos.
+    Needs a chapter file (see createChaptersList)
+    Input: folder_info as dict
+    Ouptut: None
+    '''
     os.chdir(folder_info['path'])
     if(len(folder_info['video_details']) == 1):  # Only one video
         file_in = folder_info['video_details'].keys()[0]
@@ -484,31 +539,35 @@ def createLongVideo(folder_info):
     executeCommand(command)
 
 
-def moveLongVideo(old_path, new_path, todo_file=script_root_dir + '/todo.sh'):
+def moveLongVideo(old_path, new_path, todo_file_path=script_root_dir + '/todo.sh'):
     '''
-    Function that adds bash commands as strings
-    into a file (default = /share/Scripts/todo.sh)
+    Function that adds bash commands to move files on the remote storage
+    as strings into a file (default = /share/Scripts/todo.sh)
+    Input: old_path as string, new_path as string, todo_file_path as string
+    Ouptut: None
     '''
-    old_file_path = "{}/{}.mkv".format(os.path.join(old_path.replace(video_root_dir, popcorn_root_dir)).encode('utf-8'), os.path.basename(old_path).encode('utf-8'))
-    new_file_path = "{}/{}.mkv".format(os.path.join(new_path.replace(video_root_dir, popcorn_root_dir)).encode('utf-8'), os.path.basename(new_path).encode('utf-8'))
-    new_folder_path = new_path.replace(video_root_dir, popcorn_root_dir)
+    old_file_path = "{}/{}.mkv".format(os.path.join(old_path.replace(local_root_dir, remote_root_dir)).encode('utf-8'), os.path.basename(old_path).encode('utf-8'))
+    new_file_path = "{}/{}.mkv".format(os.path.join(new_path.replace(local_root_dir, remote_root_dir)).encode('utf-8'), os.path.basename(new_path).encode('utf-8'))
+    new_folder_path = new_path.replace(local_root_dir, remote_root_dir)
     #logger.info(old_file_path)
     output_string = "mkdir '{}'\n".format(new_folder_path.encode('utf-8'))
     output_string += "mv '{}' '{}'\n".format(
         old_file_path,
         new_file_path)
-    with open(todo_file, "a") as todo:
+    with open(todo_file_path, "a") as todo:
         todo.write(output_string)
 
 
 
-def executeToDoFile(file_to_exec=script_root_dir + '/todo.sh'):
+def executeToDoFile(todo_file_path=script_root_dir + '/todo.sh'):
     '''
-    Function that runs each lines of todo.sh
+    Function that runs each lines of todo.sh sequentially and erases them after
+    Input: todo_file_path as string
+    Ouptut: None
     '''
     logger.info("Executing todo.sh")
     while 1:
-        with open(file_to_exec, 'r') as f:
+        with open(todo_file_path, 'r') as f:
             first = f.readline()
             logger.info(first)
             if(first == ''):
@@ -517,15 +576,17 @@ def executeToDoFile(file_to_exec=script_root_dir + '/todo.sh'):
             sub.wait()
             if(sub.wait() != 0):
                 logger.info(sub.wait())
-        out = subprocess.Popen("sed '1d' '{}' > '{}'/tmpfile; mv tmpfile '{}'".format(file_to_exec, script_root_dir, file_to_exec), shell=True)
+        out = subprocess.Popen("sed '1d' '{}' > '{}'/tmpfile; mv tmpfile '{}'".format(todo_file_path, script_root_dir, todo_file_path), shell=True)
         out.wait()
     logger.info("Todo file done")
 
 
 def createChaptersList(folder_info):
     '''
-    Function that creates a file containning the file list and the duration of the videos to create a new video
-    Takes a folder in entry, creates a file
+    Function that creates a file containning the video list and the duration of
+    the videos to pass to mkvmerge to create a long version with chapters
+    Input: folder_info as dict
+    Ouptut: None
     '''
     time_format = re.compile('([0-9]{1,2}:[0-9]{2}:[0-9]{2}.[0-9]{3})')
     video_details = folder_info['video_details']
@@ -542,7 +603,7 @@ def createChaptersList(folder_info):
                 video_details[filename][0],
                 video_details[filename][1]
                 )
-        else:
+        else:# All the others
             o = datetime.strptime(video_details[filename][1], '%H:%M:%S.%f')
             deltaO = timedelta(
                 hours=o.hour,
@@ -560,21 +621,22 @@ def createChaptersList(folder_info):
         file_list.write(output_string.encode('utf-8'))
 
 
-#Function that gets a key in a dict using its value
-#Dict and key
-def getKeyFromPath(structure, path):
-    return structure.keys()[structure.values()['path'].index(value)]
-
-
-def mount():
-    '''Function that checks if remote media is mounted
-    -Input:NA
-    -Output: Bool'''
-    if (not os.path.exists('/mnt/A410')):
-        logger.info("making dir /mnt/A410")
-        os.makedirs("/mnt/A410")
+def mount(remote_root_dir, ip_addr):
+    '''
+    Function that checks if remote media is mounted
+    Input: remote_root_dir as string
+    Output: Bool
+    '''
+    if (not os.path.exists(remote_root_dir)):
+        logger.info("making dir " + remote_root_dir)
+        os.makedirs(remote_root_dir)
     try:
-        proc = subprocess.Popen("mount -t cifs //192.168.1.41/share/Video -o username=nmt,password=12345 /mnt/A410/")
+        proc = subprocess.Popen("mount -t cifs //{}{} -o username={},password={} {}".format(
+            ip_addr,
+            remote_root_dir,
+            remote_usr, remote_pass,
+            remote_root_dir)
+        )
         stdout, err = proc.communicate()
         if proc.wait() == 0:
             logger.info("Mounted!")
@@ -584,23 +646,27 @@ def mount():
         return False
 
 
-#Function that takes a file and tells if its a video or not
-#Input: File
-#Output: File or nothing
-def checkIfVid(f):
-    extension_list = ['.mp4', '.mpg', '.mpeg', '.avi', '.tod', '.vob', '.wmv']
-    for ext in extension_list:
-        if(f.endswith(ext) or f.endswith(ext.upper())):
+def checkIfVid(file_path, video_extentions):
+    '''
+    Function that checks if a file a video with known extension
+    Input: file_path as string, video_extensions as list of strings
+    Ouptut: Bool
+    '''
+    for ext in video_extensions:
+        if(file_path.endswith(ext) or file_path.endswith(ext.upper())):
             return True
     else:
         return False
 
-
+def configure():
+    '''
+    Function that checks weather there is a config file written
+    '''
+    pass
 
 
 #Main
 ############################################################################
-
 today = datetime.now().strftime("%Y%m%d")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -618,7 +684,7 @@ if __name__ == "__main__":
     except:
         logger.info("dir_tree.txt not found")
         past_structure = {}
-    updateStructure(past_structure, readStructure(video_root_dir))
+    updateStructure(past_structure, readStructure(local_root_dir))
     if(mount()):
     #if(True):
         executeToDoFile()
