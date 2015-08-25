@@ -13,37 +13,10 @@ from datetime import timedelta
 import subprocess
 import copy
 import logging
-from config import *
+import ConfigParser
+import argparse
+#from config import *
 from notifications import *
-
-
-def loadConfigFile():
-    with open('config.py', 'r') as f:
-        for line in f:
-            if(re.match('local_root_dir', line)):
-                global local_root_dir
-                local_root_dir = line.split('=')[1].strip(' \'\n')
-            elif(re.match('remote_root_dir', line)):
-                global remote_root_dir
-                remote_root_dir = line.split('=')[1].strip(' \'\n')
-            elif(re.match('ffmpegExecutablePath', line)):
-                global ffmpegExecutablePath
-                ffmpegExecutablePath = line.split('=')[1].strip(' \'\n')
-            elif(re.match('ffprobeExecutablePath', line)):
-                global ffprobeExecutablePath
-                ffprobeExecutablePath = line.split('=')[1].strip(' \'\n')
-            elif(re.match('mkvmergeExecutablePath', line)):
-                global mkvmergeExecutablePath
-                mkvmergeExecutablePath = line.split('=')[1].strip(' \'\n')
-            elif(re.match('vcodec', line)):
-                global vcodec
-                vcodec = line.split('=')[1].strip(' \'\n')
-            elif(re.match('acodec', line)):
-                global acodec
-                acodec = line.split('=')[1].strip(' \'\n')
-            elif(re.match('log_folder', line)):
-                global logFolder
-                logFolder = line.split('=')[1].strip(' \'\n')
 
 
 def createFolderID(folder_path):
@@ -88,8 +61,8 @@ def getFolderVideoDetails(folder_path):
     return(video_details)
 
 
-def writeStructure(structure, file_path=script_root_dir + '/dir_tree.txt'):
-    '''Function that writes a dir structure to dir_tree.txt file
+def writeStructure(structure, file_path=script_root_dir + '/dir_tree.json'):
+    '''Function that writes a dir structure to dir_tree.json file
     Input: structure as dict, file_path as string
     Output: None
     '''
@@ -97,10 +70,10 @@ def writeStructure(structure, file_path=script_root_dir + '/dir_tree.txt'):
         json.dump(structure, outfile)
 
 
-def readStructureFromFile(file_path=script_root_dir + '/dir_tree.txt'):
+def readStructureFromFile(file_path=script_root_dir + '/dir_tree.json'):
     '''
     Function that reads a structure file from a json file
-    Input: file_path as string dir_tree.txt
+    Input: file_path as string dir_tree.json
     Output: structure as dict
     '''
     with codecs.open(file_path, 'r', 'utf-8') as f:
@@ -167,7 +140,7 @@ def checkDetailsCompatibility(folder_info):
         frame_rate = min(frame_rates)
         for video in sorted(folder_info['video_details'].keys()):
             if(folder_info['video_details'][video][2] == resolution
-                and folder_info['video_details'][video][5] == frame_rate):
+                    and folder_info['video_details'][video][5] == frame_rate):
                 continue
                 logger.info(video + " is compatible")
             else:
@@ -306,10 +279,10 @@ def getVideoDetails(file_path):
     '''
     file_path = file_path.encode('utf-8')
     command = (
-        "{} -v error -show_format"
-        "-show_streams -print_format json"
+        "{} -show_format "
+        "-show_streams -print_format json "
         "-sexagesimal '{}'"
-        ).format(ffprobeExecutablePath, file_path).replace('\n', '')
+        ).format(ffprobeExecutablePath, file_path)
     proc = subprocess.Popen(
         command,
         shell=True,
@@ -546,6 +519,7 @@ def moveLongVideo(old_path, new_path, todo_file_path=script_root_dir + '/todo.sh
     Input: old_path as string, new_path as string, todo_file_path as string
     Ouptut: None
     '''
+    output_string = ''
     old_file_path = "{}/{}.mkv".format(os.path.join(old_path.replace(local_root_dir, remote_root_dir)).encode('utf-8'), os.path.basename(old_path).encode('utf-8'))
     new_file_path = "{}/{}.mkv".format(os.path.join(new_path.replace(local_root_dir, remote_root_dir)).encode('utf-8'), os.path.basename(new_path).encode('utf-8'))
     new_folder_path = new_path.replace(local_root_dir, remote_root_dir)
@@ -558,14 +532,13 @@ def moveLongVideo(old_path, new_path, todo_file_path=script_root_dir + '/todo.sh
         todo.write(output_string)
 
 
-
-def executeToDoFile(todo_file_path=script_root_dir + '/todo.sh'):
+def executeToDoFile(todo_file_path=os.path.join(script_root_dir, 'todo.sh')):
     '''
     Function that runs each lines of todo.sh sequentially and erases them after
     Input: todo_file_path as string
     Ouptut: None
     '''
-    logger.info("Executing todo.sh")
+    logger.info("Executing todo file")
     while 1:
         with open(todo_file_path, 'r') as f:
             first = f.readline()
@@ -617,7 +590,7 @@ def createChaptersList(folder_info):
                 n,
                 os.path.splitext(filename)[0].encode('utf-8'))
             last = addTime(video_details[filename][0], datetimeToStr(last))
-    with open(folder_info['path'] + '/chapters.txt', 'w') as file_list:
+    with open(os.path.join(folder_info['path'], 'chapters.txt'), 'w') as file_list:
         file_list.write(output_string.encode('utf-8'))
 
 
@@ -628,7 +601,7 @@ def mount(remote_root_dir, ip_addr):
     Output: Bool
     '''
     if (not os.path.exists(remote_root_dir)):
-        logger.info("making dir " + remote_root_dir)
+        logger.info('making dir {}'.format(remote_root_dir))
         os.makedirs(remote_root_dir)
     try:
         proc = subprocess.Popen("mount -t cifs //{}{} -o username={},password={} {}".format(
@@ -646,7 +619,7 @@ def mount(remote_root_dir, ip_addr):
         return False
 
 
-def checkIfVid(file_path, video_extentions):
+def checkIfVid(file_path):
     '''
     Function that checks if a file a video with known extension
     Input: file_path as string, video_extensions as list of strings
@@ -658,6 +631,7 @@ def checkIfVid(file_path, video_extentions):
     else:
         return False
 
+
 def configure():
     '''
     Function that checks weather there is a config file written
@@ -665,34 +639,203 @@ def configure():
     pass
 
 
+def write_empty_config():
+    '''
+    Function that writes an empty config file
+    Input: None
+    Outpue: None
+    '''
+    with open(os.path.join(script_root_dir, 'config.cfg'), 'w') as configFile:
+        configFile.write("""######### CONFIG FILE
+#Config file to pyHomeVM.
+#FFMPEG, LOCAL and REMOTE are necessary.
+#EMAIL and SMS are optional.
+[FFMPEG]
+ffmpegExecutablePath:
+ffprobeExecutablePath:
+vcodec:
+acodec:
+video_extensions:
+ffmpeg_preset:
+ffmpeg_crf:
+ffmpeg_crf_base:
+
+[LOCAL]
+mkvmergeExecutablePath:
+local_root_dir:
+log_folder:
+nas_composer_name:
+
+[REMOTE]
+ip_addr:
+remote_root_dir:
+remote_usr:
+remote_pass:
+
+[EMAIL]
+mail_fromaddr:
+mail_toaddrs:
+mail_username:
+mail_password:
+mail_server_addr:
+
+[SMS]
+sms_path:
+sms_user:
+sms_password:
+sms_api_id:
+sms_to:""")
+
+
+def test_executable(path_to_exec):
+    subprocess.call(['which', path_to_exec])
+    logger.info('{} found'.format(path_to_exec))
+
 #Main
 ############################################################################
+script_root_dir = os.getcwd()
 today = datetime.now().strftime("%Y%m%d")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.FileHandler('log_' + today)
-handler.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('log_{}'.format(today))
+#handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-if __name__ == "__main__":
-    #sys.stdout = Logger("log_{}.txt".format(today))
+parser = argparse.ArgumentParser(description='PyHomeVM')
+parser.add_argument('config_path',
+                    help='path to config file that is to be used.')
+parser.add_argument('-s', '--sms', help='Enables sms notifications',
+                    action='store_true')
+parser.add_argument('-l', '--log', help='Enables log sending by e-mail',
+                    action='store_true')
+parser.add_argument('-r', '--report',
+                    help='Enables html report sending by e-mail',
+                    action='store_true')
+parser.add_argument('-b', '--backup',
+                    help='Enables backup of first videos',
+                    action='store_true')
+args = parser.parse_args()
+
+#Load configuration
+config = ConfigParser.ConfigParser()
+config.optionxform = str  # Allows to keep upper case characters from config file
+if(os.path.exists(os.path.join(script_root_dir, args.config_path))):
     try:
-        open('dir_tree.txt', 'r')
-        past_structure = readStructureFromFile('dir_tree.txt')
+        config.read(args.config_path)
+        logger.info('{} found'.format(args.config_path))
     except:
-        logger.info("dir_tree.txt not found")
-        past_structure = {}
+        logger.info('{} not found\nProgram stopping'.format(args.config_path))
+        exit()
+    try:
+        #FFMPEG
+        ffmpegExecutablePath = config.get('FFMPEG', 'ffmpegExecutablePath')
+        ffprobeExecutablePath = config.get('FFMPEG', 'ffprobeExecutablePath')
+        vcodec = config.get('FFMPEG', 'vcodec')
+        acodec = config.get('FFMPEG', 'acodec')
+        video_extensions = config.get('FFMPEG', 'video_extensions').split(',')
+        ffmpeg_preset = config.get('FFMPEG', 'ffmpeg_preset')
+        ffmpeg_crf = config.getint('FFMPEG', 'ffmpeg_crf')
+        ffmpeg_crf_base = config.getint('FFMPEG', 'ffmpeg_crf_base')
+        logger.info('FFMPEG config loaded')
+    except:
+        logger.info('FFMPEG config could not be loaded\nProgram stopping')
+        exit()
+    try:
+        #LOCAL
+        local_root_dir = config.get('LOCAL', 'local_root_dir')
+        log_folder = config.get('LOCAL', 'log_folder')
+        nas_composer_name = config.get('LOCAL', 'nas_composer_name')
+        mkvmergeExecutablePath = config.get('LOCAL', 'mkvmergeExecutablePath')
+        logger.info('LOCAL config loaded')
+    except:
+        logger.info('LOCAL config could not be loaded\nProgram stopping')
+        exit()
+    try:
+        #REMOTE
+        ip_addr = config.get('REMOTE', 'ip_addr')
+        remote_root_dir = config.get('REMOTE', 'remote_root_dir')
+        remote_usr = config.get('REMOTE', 'remote_usr')
+        remote_pass = config.get('REMOTE', 'remote_pass')
+        logger.info('REMOTE config loaded')
+    except:
+        logger.info('REMOTE config could not be loaded\nProgram stopping')
+        exit()
+    try:
+        #EMAIL
+        mail_fromaddr = config.get('EMAIL', 'mail_fromaddr')
+        mail_toaddrs = config.get('EMAIL', 'mail_toaddrs')
+        mail_username = config.get('EMAIL', 'mail_username')
+        mail_password = config.get('EMAIL', 'mail_password')
+        mail_server_addr = config.get('EMAIL', 'mail_server_addr')
+        logger.info('EMAIL config loaded')
+    except:
+        logger.info('EMAIL config could not be loaded\nProgram stopping')
+        exit()
+    try:
+        #SMS
+        sms_path = config.get('SMS', 'sms_path')
+        sms_user = config.get('SMS', 'sms_user')
+        sms_password = config.get('SMS', 'sms_password')
+        sms_api_id = config.get('SMS', 'sms_api_id')
+        sms_to = config.get('SMS', 'sms_to')
+        logger.info('SMS config loaded')
+    except:
+        logger.info('SMS config could not be loaded\nProgram stopping')
+        exit()
+else:
+    write_empty_config()
+    print('{} not found'.format(args.config_path))
+    exit()
+
+#Test if configs have been loaded correctly
+#for section in config.sections():
+for variable, value in config.items('FFMPEG'):
+    #print(variable)
+    if(variable == 'ffmpegExecutablePath' or
+       variable == 'ffprobeExecutablePath'):
+        try:
+            test_executable(value)
+        except:
+            logger.info('Executable {} not found'.format(variable))
+
+
+
+if(args.log):
+    pass
+
+
+if __name__ == "__main__":
+    try:  # Check to see if dir_tree exists -> means that the program has been run already
+        dir_tree_file = os.path.join(script_root_dir, 'dir_tree.json')
+        if not os.path.exists(dir_tree_file):
+            raise Exception("Directory structure definition file not found.")
+        past_structure = readStructureFromFile(dir_tree_file)  # Load the directories structure
+    except:
+        logger.info("dir_tree.json not found")
+        past_structure = {}  # Start as new
+    html_report = '<!DOCTYPE html>\n<html>\n<body>\n<h1>NAS Report</h1>'
     updateStructure(past_structure, readStructure(local_root_dir))
-    if(mount()):
-    #if(True):
-        executeToDoFile()
+    #if(mount()):
+    sms_sent_file = os.path.join(script_root_dir, 'sms_sent')
+    if(True):
+        if(os.path.isfile(dir_tree_file)):
+            executeToDoFile()
         syncDirTree()
         transferLongVersions()
+        if(os.path.exists(sms_sent_file)):
+            os.remove(sms_sent_file)
+            logger.info('sms_sent file has been deleted')
     else:
-        pass
-        #sendSmsNotification('The NAS is trying to reach the media center')
+        sms_sent_file
+        if(not os.path.exists(sms_sent_file)):
+            sendSmsNotification('The NAS is trying to reach the media center')
+            with open(sms_sent_file, 'w') as sms_not:
+                msg = 'SMS has been sent {}'.format(today)
+                sms_not.write(msg)
+                logger.info(msg)
+    html_report += '</body>\n</html>'
     #sendMailNotification(sys.tdout.encode('utf-8'))
 
 
