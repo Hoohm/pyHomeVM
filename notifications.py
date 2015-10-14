@@ -5,6 +5,7 @@ import smtplib
 import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.MIMEBase import MIMEBase
 from config import *
 
 
@@ -13,7 +14,7 @@ def sendMailReport(mail_message):
     input: mail_message as string path as string
     output: None'''
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Rapport du {}'.format(time.strftime("%d/%m/%Y"))
+    msg['Subject'] = 'Report of {}'.format(time.strftime("%d/%m/%Y"))
     msg['From'] = mail_fromaddr
     msg['To'] = mail_toaddrs
     converted = MIMEText(mail_message, 'html')
@@ -38,8 +39,13 @@ def sendMailLog(logfile):
     msg['Subject'] = 'Rapport du {}'.format(time.strftime("%d/%m/%Y"))
     msg['From'] = mail_fromaddr
     msg['To'] = mail_toaddrs
-    converted = MIMEText(mail_message, 'html')
+    converted = MIMEText('Log of the day', 'html')
     msg.attach(converted)
+    log = MIMEBase('application', "octet-stream")
+    log.set_payload(open(logfile,"rb").read())
+    log.add_header('Content-Disposition', 'attachment; filename="{}"'.format(os.path.basename(logfile)))
+    msg.attach(log)
+
     try:
         server = smtplib.SMTP(mail_server_addr)
     except:
