@@ -300,7 +300,9 @@ def choose_format(video_list, video_db):
     formats = {
         'width': min(widths),
         'height': heights[widths.index(min(widths))],  # Keep aspect ratio
-        'frame_rate': min(frame_rates)}
+        'frame_rate': min(frame_rates),
+        'video_codec': 'h264',
+        'audio_codec': 'aac'}
     return(formats)
 
 
@@ -323,7 +325,9 @@ def checkDetailsCompatibility(structure, folder_id, video_db, ffmpeg, local, rem
         for file_id in videos:
             if(video_db[file_id].frame_rate != formats['frame_rate'] or
                     video_db[file_id].width != formats['width'] or
-                    video_db[file_id].height != formats['height']):
+                    video_db[file_id].height != formats['height'] or
+                    video_db[file_id].video_codec != formats['video_codec'] or
+                    video_db[file_id].audio_codec != formats['audio_codec']):
                 target_file_path = video_db[file_id].convertVideo(
                     ffmpeg,
                     local,
