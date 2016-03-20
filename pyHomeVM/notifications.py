@@ -29,7 +29,7 @@ def sendMailReport(mail_message, email):
         server.quit()
 
 
-def sendMailLog(logfile, email):
+def sendMailLog(logfile, email, html):
     '''Function that sends the logfile through email
     input:logfile path as string
     output:None'''
@@ -53,7 +53,7 @@ def sendMailLog(logfile, email):
         pass
     finally:
         server.login(email['username'], email['password'])
-        server.sendmail(email['from'], email['to'], msg.as_string())
+        server.sendmail(email['from'], html['company_mail'], msg.as_string())
         server.quit()
 
 

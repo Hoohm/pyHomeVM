@@ -3,3 +3,5 @@
 *.cfg
 log_*
 *.txt
+*.json
+*.db

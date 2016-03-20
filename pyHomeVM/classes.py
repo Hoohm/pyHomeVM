@@ -1,4 +1,5 @@
 # coding=utf-8
+"""Classes."""
 import logging
 from CONSTANTS import CONSTANTS
 import os
@@ -17,7 +18,13 @@ logger.addHandler(handler)
 
 
 class Video(object):
+    """Video class.
+
+    Class that creates instances of the videos managed
+    """
+
     def __init__(self, file_id, file_path, category):
+        """__ini__."""
         self.file_path = file_path
         self.file_id = file_id
         self.file_name = os.path.basename(file_path)
@@ -30,7 +37,15 @@ class Video(object):
         self.width = None
         self.frame_rate = None
         self.creation_time = None
+        self.video_type = None
         self.category = category
+
+    def __str__(self):
+        return('File name: {}\nDuration: {}\nComposer: {}'.format(
+            self.file_path.encode('utf-8'),
+            self.duration,
+            #self.video_duration,
+            self.composer))
 
     def populate_video_details(self, local):
         command = (
@@ -47,7 +62,10 @@ class Video(object):
                 video = stdout['streams'][stream_num]
                 self.height = video.get('height')
                 self.width = video.get('width')
-                self.duration = video.get('duration')
+                if(not self.file_path.endswith('mkv')):
+                    self.duration = video.get('duration')
+                else:
+                    self.duration = video['tags'].get('DURATION')
                 self.offset = video.get('start_time')
                 self.video_codec = video.get('codec_name')
                 self.frame_rate = video.get('r_frame_rate')
@@ -68,11 +86,9 @@ class Video(object):
             self.creation_time = tags.get('creation_time')
         except Exception:
             logger.info(traceback.format_exc())
-            logger.info("No tags in {}".format(self.file_path))
+            logger.info("No tags in {}".format(self.file_path.encode('utf-8')))
 
     def baseConvertVideo(self, ffmpeg, local, output_file):
-        #temp_path = os.path.join(os.path.dirname(self.file_path), 'temp.vid')
-        #os.rename(self.file_path, temp_path)
         if(self.composer):
             composer = self.composer
         else:
@@ -81,7 +97,6 @@ class Video(object):
             creation_time = self.creation_time
         else:
             creation_time = time.strftime('%Y-%m-%d %H:%M:%S')
-        #output_file = os.path.splitext(self.file_path)[0] + '.mp4'
         command = (
             "'{}' -loglevel panic -y -i '{}' "
             "-rc_eq 'blurCplx^(1-qComp)' "
@@ -97,14 +112,10 @@ class Video(object):
             ffmpeg['crf'],
             composer,
             creation_time,
-            output_file)
+            output_file.decode('utf-8'))
         executeCommand(command)
-        #return(output_file)
-        #os.remove(temp_path)
 
     def convertVideo(self, ffmpeg, local, formats, compatibility_folder_path):
-        #input_file = os.path.join(compatibility_folder, os.path.basename(self.file_path))
-        #os.rename(self.file_path, input_file)
         output_file = os.path.join(
             compatibility_folder_path,
             os.path.splitext(os.path.basename(self.file_path))[0] + '.mp4')

@@ -14,17 +14,17 @@ The tool can detect new videos, updates and modification in folder content to ad
 
 DONE:
 
-1) Reading, saving and updating changes in folder structure.
+1) Reading, saving and updating changes in folder structure.<br>
 The structure is presented like this:
 The root folder is Video, Level 1 are years, level 2 are names for the Video.
 
 
-2) Base encoding
+2) Base encoding<br>
 To be able to create videos from different holidays, I choose to encode every video that
 gets on the platform so that mixing of different videos is easy. Differences in resolution or
 fps are tacken care off by the program. You can choose options for quality directly in the config file.
 
-3) Long Versions
+3) Long Versions<br>
 The small part of your holidays are merged together in one mkv file with each subvideo being a chapter.
 
 The program now functions. It still needs some polish and refactoring. Also, the config file has to be

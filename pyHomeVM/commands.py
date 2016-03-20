@@ -24,5 +24,7 @@ def executeCommand(command):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
     stdout, err = proc.communicate()
+    logger.info('STDOUT:{}'.format(stdout))
+    logger.info('ERR:{}'.format(err))
     proc.wait()
     return(stdout, err)

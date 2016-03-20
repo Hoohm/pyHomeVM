@@ -1,8 +1,10 @@
 # coding=utf-8
-'''
-Video-sync. A tool that allows you to manage your holidays library and create
+
+"""Video-sync.
+
+A tool that allows you to manage your holidays library and create
 long version of your holidays to enjoy on your media center
-'''
+"""
 
 import os
 import json
@@ -31,12 +33,13 @@ logger.addHandler(handler)
 
 
 def create_file_id(file_path, block_size=256):
-    '''
+    """Create a file ID.
+
     Function that takes a file and returns the first 10 characters of a hash of
     the first 10 block of bytes
     Input: File
     Output: Hash of 10 blocks of 128 bits of size as string
-    '''
+    """
     file_size = os.path.getsize(file_path)
     start_index = int(file_size / 2)
     with open(file_path, 'r') as f:
@@ -53,12 +56,13 @@ def create_file_id(file_path, block_size=256):
 
 
 def create_folder_id(folder_path, local):
-    '''
+    """Create a folder ID.
+
     Function that takes a folder path and returns a unique ID to
     identify a specific content of folder.
     Input: folder_path as string
     Output: ID as string
-    '''
+    """
     folder_id = ''
     video_list = {}
     for file_name in sorted(list_video_files(folder_path, local)):  # loop files
@@ -70,64 +74,54 @@ def create_folder_id(folder_path, local):
 
 
 def list_video_files(folder_path, local):
-    '''
+    """List video files.
+
     Function that lists the video files found in a folder
     Input: folder_path as string
     Output: list of videos paths (as strings)
-    '''
+    """
     return [i
             for i in os.listdir(folder_path)
-            if os.path.isfile(os.path.join(folder_path, i))
-            and
+            if os.path.isfile(os.path.join(folder_path, i)) and
             check_if_vid(os.path.join(folder_path, i), local)]
 
 
 def check_mkv_videos(local, video_db):
-    '''
+    """Verify mkv videos.
+
     Function that checks that all mkvs long videos have
     the same name than their folder
-    '''
-
-    # for video_id in video_db.keys():
-    #     if(video_db[video_id].category == 'long'):
-    #         if(local['root_dir'] in video_db[video_id].file_path):
-    #             if(os.path.isfile(video_db[video_id].file_path)):
-    #                 continue
-    #             else:
-    #                 old_path = video_db[file_id]
-    #                 #new_path = 
-    #                 os.rename(video_db[video_id].file_path, )
+    """
     root_dir = local['root_dir']
     for i in os.walk(root_dir):
-        if(len(i[0].split('/')) - 2 == len(root_dir.split('/'))  # 2 levels
-                and re.match(r'^[0-9]{4}$', i[0].split('/')[-2])  # match year
-                and len(i[2]) != 0):  # is not empty
+        if(len(i[0].split('/')) - 2 == len(root_dir.split('/')) and  # 2 levels
+            re.match(r'^[0-9]{4}$', i[0].split('/')[-2]) and  # match year
+                len(i[2]) != 0):  # is not empty
             for video in i[2]:
                 if(os.path.splitext(video)[1] == '.mkv'):
                     file_path = os.path.join(i[0], video)
-                    ID = create_file_id(file_path)
-                    if(video_db[ID].file_path != file_path):
+                    vid_id = create_file_id(file_path)
+                    if(video_db[vid_id].file_path != file_path.decode('utf-8')):
                         os.rename(
                             file_path,
-                            os.path.join(os.path.dirname(file_path),
-                            os.path.dirname(file_path).split('/')[-1]) + '.mkv')
-                        video_db[ID].file_path = file_path
-
+                            os.path.join(
+                                os.path.dirname(file_path),
+                                os.path.dirname(file_path).split('/')[-1]) + '.mkv')
+                        video_db[vid_id].file_path = file_path
 
 
 def write_structure(structure, file_path):
-    '''Function that writes a dir structure to dir_tree.json file
+    """Function that writes a dir structure to dir_tree.json file.
+
     Input: structure as dict, file_path as string
     Output: None
-    '''
+    """
     with open(file_path, 'w') as outfile:
         json.dump(structure, outfile)
 
 
 def convert_keys_to_string(dictionary):
-    """
-    Recursively converts dictionary keys to strings.
-    """
+    """Recursively converts dictionary keys to strings."""
     if not isinstance(dictionary, dict):
         return dictionary
     return dict((str(k), convert_keys_to_string(v))
@@ -135,11 +129,11 @@ def convert_keys_to_string(dictionary):
 
 
 def readStructureFromFile(CONSTANTS):
-    '''
-    Function that reads a structure file from a json file
+    """Function that reads a structure file from a json file.
+
     Input: file_path as string dir_tree.json
     Output: structure as dict
-    '''
+    """
     with codecs.open(CONSTANTS['structure_file_path'], 'r', 'utf-8') as f:
         try:
             structure = json.load(f)
@@ -151,17 +145,18 @@ def readStructureFromFile(CONSTANTS):
 
 
 def createStructureEntry(ID, structure, folder_path, video_list):
-    '''
-    Function that creates an entry in the structure object
+    """Function that creates an entry in the structure object.
+
     Input: ID, structure, folder_path, video_list
-    Output: NA, changes strucure in place'''
+    Output: NA, changes strucure in place
+    """
     structure[ID] = {}
     structure[ID]['path'] = folder_path
     structure[ID]['video_list'] = video_list
 
 
 def get_new_file_ids_from_structure(structure, video_db):
-    '''
+    """
     Function that lists the videos that are in a structure
     and looks for them in the video.db file.
     Returns the list of videos found in structure but not in the db,
@@ -169,7 +164,7 @@ def get_new_file_ids_from_structure(structure, video_db):
     Input:  - structure as dict
             - video_db as shelve object
     Output: dict with file_id as keys and file_path as values
-    '''
+    """
     video_ids = {}
     for folder_id in structure.keys():
         for file_id, file_name in structure[folder_id]['video_list'].items():
@@ -181,8 +176,9 @@ def get_new_file_ids_from_structure(structure, video_db):
 
 
 def check_and_correct_videos_errors(video_ids, video_db, local, ffmpeg):
-    '''
-    Function that loops through a list of video ids, uses checkVideoIntegrity
+    """Function that checks and corrects for errors in videos.
+
+    It loops through a list of video ids, uses checkVideoIntegrity
     to checks if they contain errors or are corrupted
     and calls correct_video on them.
     Input:  - video_ids as list of video ids
@@ -190,20 +186,16 @@ def check_and_correct_videos_errors(video_ids, video_db, local, ffmpeg):
             - local as local config dict
             - ffmpeg as ffmpeg config dict
     Ouput: NA
-    '''
+    """
     for file_id in video_ids.keys():
         state = checkVideoIntegrity(
             video_ids[file_id],
-            file_id,
-            local,
-            video_db)
+            local)
         correct_video(state, video_ids[file_id], file_id, local, ffmpeg)
 
 
 def correct_video(state, file_path, file_id, local, ffmpeg):
-    '''
-    Function that deals with errors in videos or corrupted videos.
-    '''
+    """Function that deals with errors in videos or corrupted videos."""
     folder_path = os.path.dirname(file_path)
     if(state == 'corrupt'):  # Move the file into corrupted folder
         if(not os.path.exists(os.path.join(folder_path, 'corrupted'))):
@@ -227,18 +219,17 @@ def correct_video(state, file_path, file_id, local, ffmpeg):
 
 
 def read_structure(local):
-    '''
-    Function that reads the structure of the dirs of the videos
+    """Function that reads the structure of the dirs of the videos.
+
     Input: Base dirs as lit
     Output: Dict of dir structure of videos
-
-    '''
+    """
     structure = {}
     root_dir = local['root_dir']
     for i in os.walk(root_dir):
-        if(len(i[0].split('/')) - 2 == len(root_dir.split('/'))  # 2 levels
-                and re.match(r'^[0-9]{4}$', i[0].split('/')[-2])  # match year
-                and len(i[2]) != 0):  # is not empty
+        if(len(i[0].split('/')) - 2 == len(root_dir.split('/')) and
+            re.match(r'^[0-9]{4}$', i[0].split('/')[-2]) and
+                len(i[2]) != 0):  # is not empty
             ID, video_list = create_folder_id(i[0], local)
             if(ID == ''):
                 continue
@@ -252,28 +243,30 @@ def read_structure(local):
 
 
 def clean_video_db(video_db):
-    '''
+    """Clean video db.
+
     Checks for videos that belong to any other category than normal
     and deletes them from the db
     Input:  - video_db as shelve object
     Output: NA
-    '''
+    """
     for file_id in video_db:
-        if(video_db[file_id].category == 'normal'
-                or video_db[file_id].category == 'long'):
+        if(video_db[file_id].category == 'normal' or
+                video_db[file_id].category == 'long'):
             pass
         else:
             del(video_db[file_id])
 
 
 def multiple_formats(video_list, video_db):
-    '''
+    """Check if video_type matches.
+
     Function that verifies the string of options from a list
     of video. If there are more than 1 return True
     Input:  - video list
             - video db
     Output: - Bool
-    '''
+    """
     video_types = {}
     for file_id in video_list:
         video_types[video_db[file_id].video_type] = 0
@@ -283,13 +276,14 @@ def multiple_formats(video_list, video_db):
 
 
 def choose_format(video_list, video_db):
-    '''
+    """Pick a format to create videos.
+
     Function that selects the resolution and frame rate
     for the long version
     Input:  - video list of video ids
             - video db
     Output: - dict with framerate and resolution
-    '''
+    """
     widths = []
     heights = []
     frame_rates = []
@@ -307,13 +301,13 @@ def choose_format(video_list, video_db):
 
 
 def checkDetailsCompatibility(structure, folder_id, video_db, ffmpeg, local, remote):
-    '''
+    """
     Function that checks that every video in one folder have the same
     resolution or framerate.
     If not, converts to the lowest standard of the different possibilities.
     Input: folder_info as dict of video details
     Output: changes as Bool
-    '''
+    """
     videos = structure[folder_id]['video_list'].keys()
     video_list = []
     if(multiple_formats(videos, video_db)):
@@ -368,12 +362,12 @@ def get_video_order(file_ids, video_db, by):
 
 
 def datetimeToStr(time_to_convert):
-    '''
+    """
     Function that converts deltatime into string making sure
     that the formatting is right for mkvmerge
     Input: time_to_convert as timedelta object
     Output: time as string
-    '''
+    """
     result = str(time_to_convert)
     if(re.match('[0-9]{1,2}:[0-9]{2}:[0-9]{2}.[0-9]', result)):
         return(result)
@@ -382,11 +376,11 @@ def datetimeToStr(time_to_convert):
 
 
 def addTime(t1, t2):
-    '''
+    """
     Function that adds times
     Input: t1 and t2 as strings
     Ouptut: added time as deltatime object
-    '''
+    """
     t1 = datetime.strptime(t1, '%H:%M:%S.%f')
     t2 = datetime.strptime(t2, '%H:%M:%S.%f')
     deltat1 = timedelta(
@@ -403,12 +397,12 @@ def addTime(t1, t2):
 
 
 def format_html(old_path, present_path, action, **file_paths):
-    '''
+    """
     Function that takes two paths, and action and file lists
     and returns an html string that will be inserted in html_report
     Input: old_path as string, present_path as string, action as string
     file_paths as dict of files as string
-    '''
+    """
     if(action == 'moved'):
         html_string = 'Le dossier <b>{}</b> en {} a été déplacé en {} sous <b>{}</b><br>'.format(
             old_path.split('/')[-1],
@@ -441,14 +435,15 @@ def format_html(old_path, present_path, action, **file_paths):
 
 
 def updateStructure(past_structure, new_structure, local, ffmpeg, remote, video_db):
-    '''
+    """
     Function that compares two structures looking
     for new,modified,deleted folders/files
     Input: past_structure as dict, new_structure as dict
     Output: None, changes strucure in place
-    '''
+    """
     html_report = {'new': '', 'modified': '', 'moved': '', 'deleted': ''}
     if(new_structure == past_structure):
+        logger.info('No changes found')
         return(html_report)
     new_paths = getPathList(new_structure)
     new_file_ids = set()
@@ -528,7 +523,7 @@ def updateStructure(past_structure, new_structure, local, ffmpeg, remote, video_
 
 def mkv_in_local(old_path, new_path):
     new_file_path = os.path.join(new_path, os.path.basename(old_path) + '.mkv')
-    print(new_file_path)
+    #print(new_file_path)
     if(os.path.exists(new_file_path)):
         return(True)
     else:
@@ -550,9 +545,9 @@ def process_folder(structure, present_structure, folder_id, video_db, ffmpeg, lo
 
 
 def updateVideoDB(video_db, ffmpeg, local, file_id, file_name, state, folder_path):
-    '''
+    """
     Updates video db with the new videos.
-    '''
+    """
     if(not state):  # Store
         temp_vid = Video(
             file_id,
@@ -571,28 +566,36 @@ def video_in_db(video_db, file_id):
         return('new')
 
 
-def checkVideoIntegrity(file_path, file_id, local, video_db):
-    '''
+def checkVideoIntegrity(file_path, local):
+    """
     Checks if video is corrupted or contains errors
-    '''
-    cmd = "'{}' -v error -i '{}' -f null -".format(
-        local['ffmpeg_executable_path'],
+    """
+    cmd = "'{}' -show_streams -show_format -print_format json '{}'".format(
+        local['ffprobe_executable_path'],
         file_path.encode('utf-8'))
     (stdout, err) = executeCommand(cmd)
     if(re.findall('Invalid data found when processing input', err)):
         return('corrupt')
-    elif(err != ''):
+    cmd = "'{}' -v error -i '{}' -f null -".format(
+        local['ffmpeg_executable_path'],
+        file_path.encode('utf-8'))
+    (stdout, err) = executeCommand(cmd)
+    #print('stdout: ', stdout)
+    #print('err: ', err)
+    #if(re.findall('Invalid data found when processing input', err)):
+        #return('corrupt')
+    if(err != ''):
         return('error')
     else:
         return('clean')
 
 
 def getPathList(structure):
-    '''
+    """
     Function that gets le list of existing paths in a structure
     Input: Structure as dict
     Output: paths as list of strings
-    '''
+    """
     paths = []
     for ID in structure.keys():
         paths.append(structure[ID]['path'])
@@ -600,26 +603,25 @@ def getPathList(structure):
 
 
 def syncDirTree(local, remote):
-    '''
+    """
     Function that copies the folder structure to the remote media player.
     Suppresses the folder that are empty and missing from the NAS
     Input: None
     Output: None
-    '''
+    """
     logger.info('Syncing remote folders structure')
     executeCommand(
-        (
-            "rsync --delete -av -f\"- /*/*/*/\" -f\"- */*/*\" "
-            "{} {}").format(local['root_dir'] + '/', remote['root_dir'] + '/'))
+        "rsync --delete -av -f\"- /*/*/*/\" -f\"- */*/*\" {} {}".format(
+            local['root_dir'] + '/', remote['root_dir'] + '/'))
 
 
 def transferLongVersions(local, remote, video_db):
-    '''
+    """
     Function that looks for mkv movies and sends them
     to the remote media player
     Input: None
     Output: None
-    '''
+    """
     long_videos_path = []
     root_dir = local['root_dir']
     for i in os.walk(root_dir):
@@ -632,8 +634,10 @@ def transferLongVersions(local, remote, video_db):
                     long_videos_path.append(os.path.join(i[0], video))
     for video in long_videos_path:
         #  if(os.splitext(video_db[create_file_id(video)].file_name)[0] == ):
+        #print(video)
+        #print(os.path.join(video.replace(local['root_dir'], remote['root_dir'])))
         try:
-            os.rename(
+            shutil.move(
                 video,
                 os.path.join(video.replace(local['root_dir'], remote['root_dir'])))
         except Exception:
@@ -642,41 +646,43 @@ def transferLongVersions(local, remote, video_db):
 
 
 def createLongVideo(folder_path, video_list, local, remote, video_db):
-    '''
+    """
     Function that runs mkvmerge to create a long version of list of videos.
     Needs a chapter file (see createChaptersList)
     Input: folder_info as dict
     Ouptut: None
-    '''
+    """
     file_in = ''
     if(len(video_list) == 1):  # Only one video
         file_in += video_db[video_list[0]].file_path
     else:
         for file_id in video_list:
             file_in += "'{}' + ".format(
-                video_db[file_id].file_path.encode('utf-8')) # .replace(' ', '\ ')
+                video_db[file_id].file_path.encode('utf-8'))
         file_in = file_in.rstrip(' + ')
     chapters_file_path = os.path.join(
         folder_path, CONSTANTS['chapters_file_name'])
     output_file = os.path.join(
-        folder_path.encode('utf-8'),
-        os.path.basename(folder_path.encode('utf-8')) + '.mkv')
+        folder_path,  # .encode('utf-8')
+        os.path.basename(folder_path) + '.mkv')  # .encode('utf-8')
     command = "{} {} --quiet --chapters '{}' -o '{}'".format(
         local['mkvmerge_executable_path'].encode('utf-8'),
         file_in,
         os.path.join(
             folder_path,
-            chapters_file_path).encode('utf-8'),#.replace(' ', '\ '),
-        output_file)
+            chapters_file_path).encode('utf-8'),
+        output_file.encode('utf-8'))
     stdout, err = executeCommand(command)
-    output_file_id = create_file_id(output_file)
-    video_db[output_file_id] = Video(
-        output_file_id,
-        output_file,
-        category='long')
-    # video_db[output_file_id].remote_file_path = output_file.replace(
-    #     local['root_dir'],
-    #     remote['root_dir'])
+    if(os.path.isfile(output_file)):
+        output_file_id = create_file_id(output_file)
+        temp_vid = Video(
+            output_file_id,
+            output_file,
+            category='long')
+        temp_vid.populate_video_details(local)
+        video_db[output_file_id] = temp_vid
+    else:
+        logger.info('Folder {} has some errors for merging'.format(folder_path.encode('utf-8')))
     os.remove(chapters_file_path)
 
 
@@ -691,12 +697,12 @@ def clean_remote(remote):
 
 
 def moveLongVideo(old_path, new_path, local, remote):
-    '''
+    """
     Function that adds bash commands to move files on the remote storage
     as strings into a file (default = /share/Scripts/todo.sh)
     Input: old_path as string, new_path as string, todo_file_path as string
     Ouptut: None
-    '''
+    """
     output_string = ''
     old_file_path = "{}/{}.mkv".format(
         os.path.join(
@@ -715,11 +721,11 @@ def moveLongVideo(old_path, new_path, local, remote):
 
 
 def executeToDoFile(todo_file_path, local, CONSTANTS):
-    '''
+    """
     Function that runs each lines of todo.sh sequentially and erases them after
     Input: todo_file_path as string
     Ouptut: None
-    '''
+    """
     os.chdir(local['root_dir'])
     logger.info("Executing todo file")
     while 1:
@@ -743,12 +749,12 @@ def executeToDoFile(todo_file_path, local, CONSTANTS):
 
 
 def createChaptersList(folder_path, video_db, video_list):
-    '''
+    """
     Function that creates a file containning the video list and the duration of
     the videos to pass to mkvmerge to create a long version with chapters
     Input: folder_info as dict
     Ouptut: None
-    '''
+    """
     time_format = re.compile('([0-9]{1,2}:[0-9]{2}:[0-9]{2}.[0-9]{3})')
     output_string = ''
     for n, file_id in enumerate(video_list):
@@ -779,23 +785,22 @@ def createChaptersList(folder_path, video_db, video_list):
 
 
 def mount(remote):
-    '''
+    """
     Function that checks if remote media is mounted
     Input: remote['root_dir'] as string
     Output: Bool
-    '''
+    """
     if (not os.path.exists(remote['root_dir'])):
         logger.info('making dir {}'.format(remote['root_dir']))
         os.makedirs(remote['root_dir'])
     try:
         proc = subprocess.Popen(
-            "mount -t cifs //{}{} -o username={},password={} {}".format(
+            "mount -t cifs //{}/share/Video -o username={},password={},uid=1000 {}".format(
                 remote['ip_addr'],
-                remote['root_dir'],
                 remote['username'],
                 remote['password'],
-                remote['root_dir'])
-        )
+                remote['root_dir']),
+            shell=True)
         stdout, err = proc.communicate()
         if proc.wait() == 0:
             logger.info("Mounted!")
@@ -806,12 +811,17 @@ def mount(remote):
         return False
 
 
+def umount(remote):
+    command = 'umount {}'.format(remote['root_dir'])
+    executeCommand(command)
+
+
 def check_if_vid(file_path, local):
-    '''
+    """
     Function that checks if a file a video with known extension
     Input: file_path as string, video_extensions as list of strings
     Ouptut: Bool
-    '''
+    """
     for ext in local['video_extensions']:
         if(file_path.endswith(ext) or file_path.endswith(ext.upper())):
             return True
@@ -820,12 +830,12 @@ def check_if_vid(file_path, local):
 
 
 def build_html_report(html_data, CONSTANTS, html):
-    '''
+    """
     Function that takes a dict with the folders that were
     modified/moved/created/deleted and replaces the values in the html files
     Input: html_data as dict
     Output: html_report as string
-    '''
+    """
     # for action, values in html_data.items():
     header = open(CONSTANTS['html_header_path']).read()
     body = Template(open(CONSTANTS['html_body_path']).read()).safe_substitute(
