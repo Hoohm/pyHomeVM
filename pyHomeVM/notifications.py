@@ -24,6 +24,8 @@ def sendMailReport(mail_message, email):
     except:
         pass
     finally:
+        server.ehlo()
+        server.starttls()
         server.login(email['username'], email['password'])
         server.sendmail(email['from'], email['to'], msg.as_string())
         server.quit()
@@ -52,6 +54,8 @@ def sendMailLog(logfile, email, html):
     except:
         pass
     finally:
+        server.ehlo()
+        server.starttls()
         server.login(email['username'], email['password'])
         server.sendmail(email['from'], html['company_mail'], msg.as_string())
         server.quit()
