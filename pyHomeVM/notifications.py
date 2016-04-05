@@ -4,11 +4,21 @@ import urllib
 import smtplib
 import time
 import os
+import logging
+import traceback
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.MIMEBase import MIMEBase
 from datetime import timedelta
 from datetime import datetime
+from CONSTANTS import CONSTANTS
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(CONSTANTS['log_file_path'])
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 def send_mail_report(mail_message, email):
@@ -25,8 +35,8 @@ def send_mail_report(mail_message, email):
     msg.attach(converted)
     try:
         server = smtplib.SMTP(email['server_address'])
-    except:
-        pass
+    except Exception:
+        logger.info(traceback.format_exc())
     finally:
         server.ehlo()
         server.starttls()
@@ -57,8 +67,8 @@ def send_mail_log(logfile, email, html):
 
     try:
         server = smtplib.SMTP(email['server_address'])
-    except:
-        pass
+    except Exception:
+        logger.info(traceback.format_exc())
     finally:
         server.ehlo()
         server.starttls()
@@ -81,7 +91,7 @@ def send_sms_notification(sms):
         send_datetime = datetime.now() + timedelta(days=1)
         send_datetime = send_datetime.strftime(
             "%Y-%m-%dT{}:00Z".format(sms['scheduled_time']))
-        print('tomorrow')
+        logger.info('sms will be sent tomorrow')
     sms_text = ("Le NAS veut transférer des fichier sur le media center. "
                 "Veuillez allumer le media center svp".decode('utf-8'))
     http_req = "{}?user={}&password={}&api_id={}&to={}&text={}&scheduled_time={}".format(
