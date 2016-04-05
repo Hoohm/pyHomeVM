@@ -11,12 +11,12 @@ logger.addHandler(handler)
 
 
 def executeCommand(command):
-    '''
+    """
     Function that executes a command to shell.
     Allows to waitbetween each command
     Input: command as string
     Ouptut: None
-    '''
+    """
     logger.debug('Executing: {}'.format(command))
     proc = subprocess.Popen(
         command,

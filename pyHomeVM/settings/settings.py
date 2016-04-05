@@ -156,11 +156,11 @@ def load_config(config_file_path):
 
 
 def write_empty_config(config_file_name):
-    '''
+    """
     Function that writes an empty config file
     Input: None
     Outpue: None
-    '''
+    """
     # Create an empty file that you open
     with open(os.path.join(
             CONSTANTS.CONSTANTS['script_root_dir'],
@@ -205,6 +205,7 @@ username:
 password:
 api_id:
 to:
+scheduled_time:
 
 [HTML]
 company_name:

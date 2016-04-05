@@ -14,7 +14,7 @@ from core import clean_video_db, syncDirTree, transferLongVersions
 from core import executeToDoFile, build_html_report, umount
 from core import check_and_correct_videos_errors, clean_remote
 from core import get_new_file_ids_from_structure, mount, check_mkv_videos
-from notifications import sendSmsNotification, sendMailReport, sendMailLog
+from notifications import send_sms_notification, send_mail_report, send_mail_log
 
 
 def get_args():
@@ -68,7 +68,7 @@ def main(argv=None):
         logger.info('Program already running')
         html = load_html(config)
         email = load_email(config)
-        sendMailLog(CONSTANTS['log_file_path'], email, html)
+        send_mail_log(CONSTANTS['log_file_path'], email, html)
         sys.exit()
     file(pidfile, 'w').write(pid)
     (ffmpeg, local) = load_core(config)  # load core configs
@@ -119,7 +119,7 @@ def main(argv=None):
     else:
         logger.info('Mount unssuccesfull')
         if(not os.path.exists(sms_sent_file) and args.sms):
-            sendSmsNotification(sms)
+            send_sms_notification(sms)
             logger.info('Sms sent')
             with open(sms_sent_file, 'w') as sms_not:
                 msg = 'SMS has been sent {}'.format(CONSTANTS['TODAY'])
@@ -131,10 +131,10 @@ def main(argv=None):
             html_data['deleted'] != '' or
             html_data['moved'] != '')):
         html_report = build_html_report(html_data, CONSTANTS, html)
-        sendMailReport(html_report, email)
+        send_mail_report(html_report, email)
         logger.info('Mail report sent')
     if(args.log):
-        sendMailLog(CONSTANTS['log_file_path'], email, html)
+        send_mail_log(CONSTANTS['log_file_path'], email, html)
         logger.info('log file sent')
     clean_video_db(video_db)
     check_mkv_videos(local, video_db)
