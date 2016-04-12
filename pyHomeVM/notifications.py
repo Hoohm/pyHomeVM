@@ -51,6 +51,7 @@ def send_mail_log(logfile, email, html):
     input:logfile path as string
     output:None
     """
+    logger.info('sending logfile')
     msg = MIMEMultipart('alternative')
     msg['Subject'] = 'Logs du {}'.format(time.strftime("%d/%m/%Y"))
     msg['From'] = email['from']
@@ -64,7 +65,6 @@ def send_mail_log(logfile, email, html):
         'attachment; filename="{}"'.format(
             os.path.basename(logfile)))
     msg.attach(log)
-
     try:
         server = smtplib.SMTP(email['server_address'])
     except Exception:
@@ -74,6 +74,7 @@ def send_mail_log(logfile, email, html):
         server.starttls()
         server.login(email['username'], email['password'])
         server.sendmail(email['from'], html['company_mail'], msg.as_string())
+        logger.info('email report sent')
         server.quit()
 
 
