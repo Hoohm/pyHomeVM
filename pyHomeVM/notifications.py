@@ -38,8 +38,8 @@ def send_mail_report(mail_message, email):
     except Exception:
         logger.info(traceback.format_exc())
     finally:
-        server.ehlo()
         server.starttls()
+        server.ehlo()
         server.login(email['username'], email['password'])
         server.sendmail(email['from'], email['to'], msg.as_string())
         server.quit()
@@ -70,8 +70,8 @@ def send_mail_log(logfile, email, html):
     except Exception:
         logger.info(traceback.format_exc())
     finally:
-        server.ehlo()
         server.starttls()
+        server.ehlo()
         server.login(email['username'], email['password'])
         server.sendmail(email['from'], html['company_mail'], msg.as_string())
         logger.info('email report sent')

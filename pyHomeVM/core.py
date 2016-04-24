@@ -229,7 +229,8 @@ def read_structure(local):
     for i in os.walk(root_dir):
         if(len(i[0].split('/')) - 2 == len(root_dir.split('/')) and
             re.match(r'^[0-9]{4}$', i[0].split('/')[-2]) and
-                len(i[2]) != 0):  # is not empty
+                len(i[2]) != 0 and
+                len(i[2].split('.') == 2)):  # is not empty
             ID, video_list = create_folder_id(i[0], local)
             if(ID == ''):
                 continue
