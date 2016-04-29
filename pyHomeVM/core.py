@@ -227,10 +227,10 @@ def read_structure(local):
     structure = {}
     root_dir = local['root_dir']
     for i in os.walk(root_dir):
+        print(i[2])
         if(len(i[0].split('/')) - 2 == len(root_dir.split('/')) and
             re.match(r'^[0-9]{4}$', i[0].split('/')[-2]) and
-                len(i[2]) != 0 and
-                len(i[2].split('.') == 2)):  # is not empty
+                len(i[2]) != 0):  # is not empty
             ID, video_list = create_folder_id(i[0], local)
             if(ID == ''):
                 continue
@@ -824,7 +824,8 @@ def check_if_vid(file_path, local):
     Ouptut: Bool
     """
     for ext in local['video_extensions']:
-        if(file_path.endswith(ext) or file_path.endswith(ext.upper())):
+        if(file_path.endswith(ext) or file_path.endswith(ext.upper()) and
+                not re.match(r'^.*', file_path)):
             return True
     else:
         return False
